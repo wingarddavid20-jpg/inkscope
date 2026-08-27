@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Wallet,
   ShieldCheck,
@@ -47,6 +47,21 @@ export function MyDashboard({ connected, address, onConnect, onDisconnect }: MyD
   const activeAddress = address || viewAddress;
   const isReadOnly = !connected && !!viewAddress;
   const hasAccess = connected || !!viewAddress;
+
+  // The site header's Disconnect only calls `onDisconnect` (useWallet.disconnect)
+  // and knows nothing about the read-only `viewAddress`. When a previously
+  // connected wallet disappears, leave read-only mode entirely so the dashboard
+  // doesn't linger on a stale pasted address. Pure paste mode (never connected)
+  // is untouched: prevWalletRef stays null until a wallet has actually connected.
+  const prevWalletRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (prevWalletRef.current && !address) {
+      setViewAddress(null);
+      setPasteMode(false);
+      setPastedAddress('');
+    }
+    prevWalletRef.current = address;
+  }, [address]);
 
   // Live Tydro position for the active address (idle when no address yet).
   const {

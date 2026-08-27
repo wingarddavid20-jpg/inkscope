@@ -64,7 +64,7 @@ export default function Home() {
             {/* Live protocol panels — Nado (perps) + Tydro (lending) */}
             <div className="mb-12 space-y-12">
               <NadoPanel address={address} isOwner={!!address} />
-              <TydroPanel />
+              <TydroPanel address={address} />
             </div>
 
             {/* Builders */}

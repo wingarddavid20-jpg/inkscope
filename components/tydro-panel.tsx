@@ -19,11 +19,18 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatCompact, formatAddress } from '@/lib/format';
 import { RiskBadge } from '@/components/risk-badge';
+import { getRiskLevel } from '@/lib/tydro';
+import { useTydroUserPosition } from '@/hooks/use-tydro';
 import { useTydroPanelData } from '@/hooks/use-tydro-subgraph';
 import type { TydroOverview, TydroReserve } from '@/lib/tydro';
 import type { TydroRiskPosition, TydroLeader } from '@/lib/queries/tydro';
 
-export function TydroPanel() {
+/**
+ * Live Tydro protocol panel. When a wallet/pasted address is supplied the
+ * user's own position is fetched too (the same read path My Dashboard uses),
+ * so getUserAccountData fires on the landing view as well.
+ */
+export function TydroPanel({ address }: { address?: string | null }) {
   const {
     data,
     source,
@@ -72,6 +79,8 @@ export function TydroPanel() {
         </Button>
       </div>
 
+      {address && <YourPositionCard address={address} />}
+
       {error && !data && <ErrorCard onRetry={refetch} />}
 
       {!data && !error && <PanelSkeleton />}
@@ -87,6 +96,134 @@ export function TydroPanel() {
         />
       )}
     </section>
+  );
+}
+
+/** Compact version of the My Dashboard position card for the landing view. */
+function YourPositionCard({ address }: { address: string }) {
+  const {
+    data: position,
+    loading,
+    error,
+    refetch,
+  } = useTydroUserPosition(address, 30_000);
+
+  return (
+    <Card
+      className="glass mb-4 border-[#8B5CF6]/30 bg-[#8B5CF6]/[0.05] p-5 animate-fade-in-up"
+      style={{ animationDelay: '40ms' }}
+    >
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#8B5CF6]/15">
+          <ShieldCheck className="h-4 w-4 text-[#B99CFF]" />
+        </div>
+        <CardTitle className="font-display text-base font-bold">Your Tydro Position</CardTitle>
+        <span className="font-mono text-xs text-muted-foreground">{formatAddress(address)}</span>
+        {loading && !position && (
+          <Badge variant="outline" className="ml-auto gap-1 font-display text-xs">
+            <RefreshCw className="h-3 w-3 animate-spin" />
+            Loading
+          </Badge>
+        )}
+      </div>
+
+      {error && (
+        <div className="rounded-lg border border-rose-400/20 bg-rose-500/10 px-3 py-2.5">
+          <p className="font-body text-xs text-rose-300">{error}</p>
+          <button
+            onClick={refetch}
+            className="mt-1 font-display text-xs font-semibold text-rose-200 underline underline-offset-2 hover:text-rose-100"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {loading && !position && !error && (
+        <div className="space-y-3">
+          <Skeleton className="h-8 w-28" />
+          <Skeleton className="h-1.5 w-full" />
+          <div className="grid grid-cols-2 gap-3 border-t border-border/40 pt-3">
+            <Skeleton className="h-6 w-20" />
+            <Skeleton className="h-6 w-20" />
+          </div>
+        </div>
+      )}
+
+      {!loading && position && !error && (
+        <>
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="font-display text-xs uppercase tracking-wider text-muted-foreground">
+                Health Factor
+              </p>
+              <p className="mt-1 font-display text-3xl font-bold text-emerald-300">
+                {Number.isFinite(position.healthFactor)
+                  ? position.healthFactor.toFixed(2)
+                  : '∞'}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <RiskBadge healthFactor={position.healthFactor} />
+              <span className="font-body text-xs text-muted-foreground">
+                {getRiskLevel(position.healthFactor).description}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-3 grid grid-cols-2 gap-3 border-t border-border/40 pt-3 sm:grid-cols-4">
+            <div>
+              <p className="flex items-center gap-1 font-display text-xs uppercase tracking-wider text-muted-foreground">
+                <ArrowUpRight className="h-3 w-3 text-emerald-300" />
+                Collateral
+              </p>
+              <p className="mt-1 font-display text-lg font-bold">{formatCompact(position.totalCollateralUsd)}</p>
+            </div>
+            <div>
+              <p className="flex items-center gap-1 font-display text-xs uppercase tracking-wider text-muted-foreground">
+                <ArrowDownRight className="h-3 w-3 text-rose-300" />
+                Debt
+              </p>
+              <p className="mt-1 font-display text-lg font-bold">{formatCompact(position.totalDebtUsd)}</p>
+            </div>
+            <div>
+              <p className="font-display text-xs uppercase tracking-wider text-muted-foreground">Supplied</p>
+              <p className="mt-1 font-display text-lg font-bold">{position.supplies.length}</p>
+            </div>
+            <div>
+              <p className="font-display text-xs uppercase tracking-wider text-muted-foreground">Borrowed</p>
+              <p className="mt-1 font-display text-lg font-bold">{position.borrows.length}</p>
+            </div>
+          </div>
+
+          {position.supplies.length > 0 && (
+            <div className="mt-3 border-t border-border/40 pt-3">
+              <p className="mb-1.5 font-display text-xs uppercase tracking-wider text-muted-foreground">
+                Supplies
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {position.supplies.map((supply) => (
+                  <Badge
+                    key={supply.asset.address}
+                    variant="outline"
+                    className="gap-1.5 font-display text-xs"
+                  >
+                    {supply.asset.symbol}{' '}
+                    <span className="text-muted-foreground">{formatCompact(supply.amountUsd)}</span>
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {!loading && !error && !position && (
+        <p className="py-2 font-body text-sm text-muted-foreground">
+          No active Tydro position for this address.
+        </p>
+      )}
+    </Card>
   );
 }
 
