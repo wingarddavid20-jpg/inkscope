@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Shell(npm:*)",
+      "Shell($response = Invoke-WebRequest -Uri http://localhost:3000 -UseBasicParsing; \"HTTP $($response.StatusCode)\"; \"BYTES $($response.Content.Length)\")",
+      "powershell"
+    ],
+    "deny": [],
+    "defaultMode": "default"
+  }
+}

@@ -1,0 +1,11 @@
+- Prefers highly structured, professional handoff summaries that include exact context, file paths, architectural decisions, completed work, and next steps. Confidence: 0.95
+- Prefers the assistant to clearly explain and align on what it is doing before making broad implementation changes, avoiding surprising scope or workflow. Confidence: 0.72
+- Uses `C:\projects\inkscope` as the canonical working directory for terminal commands, server execution, and file edits; changes should ultimately be synced there rather than the path containing shell-sensitive characters. Confidence: 0.95
+- Prefers inspecting the project files and verifying the application locally before proceeding with further work. Confidence: 0.9
+- Prefers progressive disclosure to reduce cognitive load: keep the main Dashboard focused on aggregate protocol metrics, and place detailed Tydro/Nado or user-level analysis inside My Dashboard rather than exposing every option and panel globally. Confidence: 0.97
+- Prefers preserving an existing product's visual aesthetic—especially colors, fonts, spacing, and layout styles—when adding or restructuring UI, unless a change is explicitly requested. Confidence: 0.95
+- When implementation work is complete, expects the assistant to commit and push verified changes when explicitly asking for a Git push; when saying “push it” in the local-app context, means make the changes available in the local running app rather than pushing to GitHub. Confidence: 0.95
+- Prefers implementation to be sequenced pragmatically: replace mock/live application data and establish its required configuration first, before proceeding with secondary integrations such as Arcana authentication. Confidence: 0.9
+- For blockchain dashboard features, prefers replacing placeholder/mock values with real contract-backed data rather than retaining simulated results. Confidence: 0.9
+- Expects live-data integrations to include explicit loading states and user-facing error handling, including when connected or pasted wallet addresses are used. Confidence: 0.88
+- When giving a direct file-creation request after the plan is settled, prefers immediate execution using the exact supplied content, followed by validation of the resulting file. Confidence: 0.86

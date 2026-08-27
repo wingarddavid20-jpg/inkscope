@@ -1,0 +1,26 @@
+{
+  "$comment": "Tydro = Aave V3 white-label instance on Ink mainnet (chain 57073). All addresses verified against the live chain on 2026-08-25 via Alchemy RPC (PoolAddressesProvider.getPool/getPoolDataProvider/getPriceOracle all match). The reserves array is a reference snapshot; the service fetches the live list via Pool.getReservesList().",
+  "chainId": 57073,
+  "rpcFallback": "https://rpc.inkonchain.com",
+  "pool": "0x2816cf15F6d2A220E789aA011D5EE4eB6c47FEbA",
+  "poolAddressesProvider": "0x4172E6aAEC070ACB31aaCE343A58c93E4C70f44D",
+  "poolDataProvider": "0x96086C25d13943C80Ff9a19791a40Df6aFC08328",
+  "uiPoolDataProvider": "0x39bc1bfDa2130d6Bb6DBEfd366939b4c7aa7C697",
+  "oracle": "0x4758213271BFdC72224A7a8742dC865fC97756e1",
+  "wethGateway": "0xDe090EfCD6ef4b86792e2D84E55a5fa8d49D25D2",
+  "reserves": [
+    "0x4200000000000000000000000000000000000006",
+    "0x73E0C0d45E048D25Fc26Fa3159b0aA04BfA4Db98",
+    "0x0200C29006150606B650577BBE7B6248F58470c1",
+    "0xe343167631d89B6Ffc58B88d6b7fB0228795491D",
+    "0xfc421aD3C883Bf9E7C4f42dE845C4e4405799e73",
+    "0x2D270e6886d130D724215A266106e6832161EAEd",
+    "0xA3D68b74bF0528fdD07263c60d6488749044914b",
+    "0x9f0a74A92287E323Eb95c1cd9eCdBEb0e397cAe4",
+    "0x2416092f143378750bb29b79eD961ab195CcEea5",
+    "0x211Cc4DD073734dA055fbF44a2b4667d5E5fE5d2",
+    "0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34",
+    "0xaE4EFbc7736f963982aACb17EFA37fCBAb924cB3",
+    "0x8A76fe7fA6da27f85a626c5C53730B38D13603d7"
+  ]
+}
