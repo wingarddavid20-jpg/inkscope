@@ -5,9 +5,11 @@ import {
   fetchNadoRecentTrades,
   fetchNadoTopPairs,
   fetchNadoUserTrades,
+  fetchNadoUserStats,
   getNadoErrorMessage,
   type NadoPair,
   type NadoTrade,
+  type NadoUserStats,
 } from '@/lib/nado';
 
 type AsyncState<T> = {
@@ -147,6 +149,62 @@ export function useNadoUserTrades(address: string | null | undefined, pollMs?: n
       setState((prev) => ({ ...prev, loading: true, error: null }));
       try {
         const data = await fetchNadoUserTrades(targetAddress);
+        if (!cancelled) setState({ data, loading: false, error: null });
+      } catch (err) {
+        if (!cancelled) {
+          setState((prev) => ({ ...prev, loading: false, error: getNadoErrorMessage(err) }));
+        }
+      }
+    }
+
+    load();
+
+    const interval = pollMsRef.current
+      ? setInterval(load, pollMsRef.current)
+      : undefined;
+
+    return () => {
+      cancelled = true;
+      if (interval) clearInterval(interval);
+    };
+  }, [address, refreshKey]);
+
+  return { ...state, refetch };
+}
+
+/**
+ * Aggregated Nado trading stats (volume, PnL, open positions) for a wallet's
+ * default subaccount. Private to the wallet owner — callers gate this behind
+ * their own ownership check. Idles when `address` is falsy.
+ */
+export function useNadoUserStats(address: string | null | undefined, pollMs?: number) {
+  const [state, setState] = useState<AsyncState<NadoUserStats>>({
+    data: null,
+    loading: false,
+    error: null,
+  });
+  const [refreshKey, setRefreshKey] = useState(0);
+  const pollMsRef = useRef(pollMs);
+
+  useEffect(() => {
+    pollMsRef.current = pollMs;
+  }, [pollMs]);
+
+  const refetch = useCallback(() => setRefreshKey((k) => k + 1), []);
+
+  useEffect(() => {
+    if (!address) {
+      setState({ data: null, loading: false, error: null });
+      return;
+    }
+
+    const targetAddress = address;
+    let cancelled = false;
+
+    async function load() {
+      setState((prev) => ({ ...prev, loading: true, error: null }));
+      try {
+        const data = await fetchNadoUserStats(targetAddress);
         if (!cancelled) setState({ data, loading: false, error: null });
       } catch (err) {
         if (!cancelled) {

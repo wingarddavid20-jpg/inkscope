@@ -4,14 +4,14 @@ import { useState } from 'react';
 import {
   Wallet,
   ShieldCheck,
-  Droplets,
   PieChart,
   ArrowUpRight,
   ArrowDownRight,
-  Layers,
   Sparkles,
   ClipboardPaste,
   RefreshCw,
+  Lock,
+  TrendingUp,
   X,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,9 +22,10 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { formatCompact } from '@/lib/format';
+import { formatCompact, timeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useTydroUserPosition } from '@/hooks/use-tydro';
+import { useNadoUserStats } from '@/hooks/use-nado';
 import { TydroPanel } from '@/components/tydro-panel';
 import { NadoPanel } from '@/components/nado-panel';
 
@@ -52,6 +53,18 @@ export function MyDashboard({ connected, address, onConnect, onDisconnect }: MyD
     error: positionError,
     refetch: refetchPosition,
   } = useTydroUserPosition(activeAddress, 45_000);
+
+  // Nado trading stats (volume, PnL, open positions) are private — only shown
+  // when the active address IS the connected wallet.
+  const isOwner =
+    !!address && !!activeAddress && address.toLowerCase() === activeAddress.toLowerCase();
+
+  const {
+    data: nadoStats,
+    loading: nadoStatsLoading,
+    error: nadoStatsError,
+    refetch: refetchNadoStats,
+  } = useNadoUserStats(isOwner ? activeAddress : null, 60_000);
 
   const handlePasteSubmit = () => {
     const trimmed = pastedAddress.trim();
@@ -84,7 +97,7 @@ export function MyDashboard({ connected, address, onConnect, onDisconnect }: MyD
             </div>
             <h3 className="font-display text-xl font-bold">View Your Dashboard</h3>
             <p className="mx-auto mt-2 max-w-sm font-body text-sm text-muted-foreground">
-              Connect your wallet or paste an address to view Tydro positions, LP pools, and portfolio across Ink.
+              Connect your wallet or paste an address to view Tydro positions and Nado trading across Ink.
             </p>
 
             {/* Two action buttons */}
@@ -156,11 +169,9 @@ export function MyDashboard({ connected, address, onConnect, onDisconnect }: MyD
 
   // ─── Connected or read-only address active ──────────────────────────────────
   const healthFactor = tydroPosition ? tydroPosition.healthFactor : null;
-  const collateral = tydroPosition?.totalCollateralUsd ?? 12_500;
-  const debt = tydroPosition?.totalDebtUsd ?? 5_200;
-  const lpValue = 8_700; // LP positions (Nado/Asteroid) — demo until indexer is wired
-  const lpCount = 4;
-  const totalValue = collateral + lpValue;
+  const collateralUsd = tydroPosition?.totalCollateralUsd ?? 0;
+  const debtUsd = tydroPosition?.totalDebtUsd ?? 0;
+  const totalValue = collateralUsd - debtUsd;
   const healthPercent = healthFactor
     ? Math.min((Math.min(healthFactor, 4) / 4) * 100, 100)
     : 0;
@@ -302,31 +313,101 @@ export function MyDashboard({ connected, address, onConnect, onDisconnect }: MyD
           </CardContent>
         </Card>
 
-        {/* LP positions */}
+        {/* Nado trading — private, only for the connected wallet's own address */}
         <Card className="glass border-border/60 animate-fade-in-up" style={{ animationDelay: '120ms' }}>
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#8B5CF6]/15">
-                <Droplets className="h-4 w-4 text-[#B99CFF]" />
+                {isOwner ? (
+                  <TrendingUp className="h-4 w-4 text-[#B99CFF]" />
+                ) : (
+                  <Lock className="h-4 w-4 text-[#B99CFF]" />
+                )}
               </div>
-              <CardTitle className="font-display text-base font-bold">LP Positions</CardTitle>
+              <CardTitle className="font-display text-base font-bold">Nado Trading</CardTitle>
+              {isOwner && nadoStatsLoading && !nadoStats && (
+                <Badge variant="outline" className="ml-auto gap-1 font-display text-xs">
+                  <RefreshCw className="h-3 w-3 animate-spin" />
+                  Loading
+                </Badge>
+              )}
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <p className="font-display text-xs uppercase tracking-wider text-muted-foreground">Total LP Value</p>
-              <p className="mt-1 font-display text-3xl font-bold">{formatCompact(lpValue)}</p>
-            </div>
-            <div className="border-t border-border/40 pt-3">
-              <p className="font-display text-xs uppercase tracking-wider text-muted-foreground">Active Positions</p>
-              <div className="mt-2 flex items-center gap-2">
-                <Badge variant="secondary" className="gap-1 font-display text-xs">
-                  <Layers className="h-3 w-3" />
-                  {lpCount} pools
-                </Badge>
-                <span className="font-body text-xs text-muted-foreground">INK/USDC · INK/ETH · …</span>
+            {!isOwner ? (
+              <div className="flex flex-col items-center rounded-lg border border-border/40 bg-secondary/30 px-4 py-8 text-center">
+                <Lock className="mb-2 h-6 w-6 text-muted-foreground" />
+                <p className="font-display text-sm font-semibold">Private trading stats</p>
+                <p className="mt-1 max-w-xs font-body text-xs leading-relaxed text-muted-foreground">
+                  Connect the wallet that owns this address to see its Nado volume, PnL, and open positions.
+                </p>
+                <Button
+                  onClick={onConnect}
+                  className="mt-3 gap-2 bg-[#7337F2] font-display text-white transition-all hover:scale-105 hover:bg-[#7337F2]/90 active:scale-95"
+                >
+                  <Wallet className="h-4 w-4" />
+                  Connect Wallet
+                </Button>
               </div>
-            </div>
+            ) : nadoStatsError && !nadoStats ? (
+              <div className="rounded-lg border border-rose-400/20 bg-rose-500/10 px-3 py-2.5">
+                <p className="font-body text-xs text-rose-300">{nadoStatsError}</p>
+                <button
+                  onClick={refetchNadoStats}
+                  className="mt-1 font-display text-xs font-semibold text-rose-200 underline underline-offset-2 hover:text-rose-100"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : nadoStatsLoading && !nadoStats ? (
+              <div className="space-y-3">
+                <Skeleton className="h-8 w-28" />
+                <div className="grid grid-cols-2 gap-3 border-t border-border/40 pt-3">
+                  <Skeleton className="h-6 w-20" />
+                  <Skeleton className="h-6 w-20" />
+                </div>
+              </div>
+            ) : nadoStats ? (
+              <>
+                <div>
+                  <p className="font-display text-xs uppercase tracking-wider text-muted-foreground">Total Volume</p>
+                  <p className="mt-1 font-display text-3xl font-bold">{formatCompact(nadoStats.volumeUsd)}</p>
+                  {nadoStats.truncated && (
+                    <p className="mt-1 font-body text-xs text-muted-foreground">
+                      Showing latest {nadoStats.tradeCount} fills (indexer cap)
+                    </p>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-3 border-t border-border/40 pt-3">
+                  <div>
+                    <p className="font-display text-xs uppercase tracking-wider text-muted-foreground">Realized PnL</p>
+                    <p
+                      className={cn(
+                        'mt-1 font-display text-lg font-bold',
+                        nadoStats.realizedPnlUsd >= 0 ? 'text-emerald-300' : 'text-rose-300'
+                      )}
+                    >
+                      {formatCompact(nadoStats.realizedPnlUsd)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-display text-xs uppercase tracking-wider text-muted-foreground">Open Positions</p>
+                    <p className="mt-1 font-display text-lg font-bold">{nadoStats.openPositions}</p>
+                  </div>
+                </div>
+                <div className="border-t border-border/40 pt-2">
+                  <p className="font-body text-xs text-muted-foreground">
+                    {nadoStats.tradeCount} fills
+                    {nadoStats.openPositions > 0 && ` · ${formatCompact(nadoStats.openPnlUsd)} unrealized`}
+                    {nadoStats.lastTradeAt ? ` · last ${timeAgo(nadoStats.lastTradeAt)}` : ''}
+                  </p>
+                </div>
+              </>
+            ) : (
+              <p className="py-2 font-body text-sm text-muted-foreground">
+                No Nado trades found for this address yet.
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -344,19 +425,13 @@ export function MyDashboard({ connected, address, onConnect, onDisconnect }: MyD
           <CardContent className="relative space-y-4">
             <div>
               <p className="font-display text-xs uppercase tracking-wider text-muted-foreground">Total Value</p>
-              <p className="mt-1 font-display text-3xl font-bold text-[#C8B5FF]">{formatCompact(totalValue)}</p>
+              <p className="mt-1 font-display text-3xl font-bold text-[#C8B5FF]">
+                {positionLoading && !tydroPosition ? '…' : formatCompact(totalValue)}
+              </p>
             </div>
             <div className="space-y-2 border-t border-border/40 pt-3">
-              <SummaryRow
-                label="Collateral"
-                value={tydroPosition ? tydroPosition.totalCollateralUsd : collateral}
-              />
-              <SummaryRow label="LP Value (demo)" value={lpValue} />
-              <SummaryRow
-                label="Debt"
-                value={-(tydroPosition ? tydroPosition.totalDebtUsd : debt)}
-                negative
-              />
+              <SummaryRow label="Collateral" value={collateralUsd} />
+              <SummaryRow label="Debt" value={-debtUsd} negative />
             </div>
             <div className="flex items-center gap-1.5 rounded-lg bg-[#8B5CF6]/10 px-3 py-2">
               <RefreshCw className={cn('h-3.5 w-3.5 text-[#B99CFF]', positionLoading && 'animate-spin')} />
@@ -390,7 +465,7 @@ export function MyDashboard({ connected, address, onConnect, onDisconnect }: MyD
           </TabsContent>
 
           <TabsContent value="nado" className="mt-0">
-            <NadoPanel address={activeAddress} />
+            <NadoPanel address={activeAddress} isOwner={isOwner} onConnect={onConnect} />
           </TabsContent>
         </Tabs>
       </div>

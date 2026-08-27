@@ -16,12 +16,23 @@ const BASE_CURRENCY_DECIMALS = 8; // Aave oracle / user account data precision
 
 // ── ABIs (minimal fragments, ethers v6) ──────────────────────────────────────
 
-const erc20Abi = ['function symbol() view returns (string)'];
+const erc20Abi = [
+  'function symbol() view returns (string)',
+  'function balanceOf(address owner) view returns (uint256)',
+];
 
 const poolAbi = [
   'function getReservesList() view returns (address[])',
   'function getUserAccountData(address user) view returns (uint256 totalCollateralBase, uint256 totalDebtBase, uint256 availableBorrowsBase, uint256 currentLiquidationThreshold, uint256 ltv, uint256 healthFactor)',
   'function getUserReserveData(address asset, address user) view returns (uint256 currentATokenBalance, uint256 currentStableDebt, uint256 currentVariableDebt, uint256 principalStableDebt, uint256 scaledVariableDebt, uint256 stableBorrowRate, uint256 liquidityRate, uint256 stableRateLastUpdated, bool usageAsCollateralEnabled)',
+  // CUSTOM Tydro layout (15 words, verified by raw eth_call decode 2026-08-26):
+  // stock Aave V3 order but with `id` (uint8) moved before the token addresses
+  // and 3 extra trailing uint256 words. Words: 0 configuration, 1 liquidityIndex,
+  // 2 currentLiquidityRate, 3 variableBorrowIndex, 4 currentVariableBorrowRate,
+  // 5 currentStableBorrowRate, 6 lastUpdateTimestamp, 7 id, 8 aTokenAddress,
+  // 9 stableDebtTokenAddress, 10 variableDebtTokenAddress,
+  // 11 interestRateStrategyAddress, 12-14 extra.
+  'function getReserveData(address asset) view returns (uint256 configuration, uint128 liquidityIndex, uint128 currentLiquidityRate, uint128 variableBorrowIndex, uint128 currentVariableBorrowRate, uint128 currentStableBorrowRate, uint40 lastUpdateTimestamp, uint8 id, address aTokenAddress, address stableDebtTokenAddress, address variableDebtTokenAddress, address interestRateStrategyAddress, uint256 extra1, uint256 extra2, uint256 extra3)',
 ];
 
 const poolDataProviderAbi = [
@@ -270,9 +281,76 @@ export async function fetchTydroOverview(provider: ethers.Provider = getTydroPro
   };
 }
 
+type RawReserveBalances = { suppliedRaw: bigint; borrowedRaw: bigint };
+
+/**
+ * Reads a token balance, tolerating quirks: the zero address (some reserves
+ * have no deployed stable debt token — getReserveData returns 0x0 there, and
+ * calling address(0) returns empty data which ethers refuses to decode as
+ * uint256) counts as 0; any other single-token read failure is logged and
+ * also counts as 0 so one broken token can't abort the whole reserve.
+ */
+async function fetchTokenBalance(
+  provider: ethers.Provider,
+  tokenAddress: string,
+  userAddress: string
+): Promise<bigint> {
+  if (!tokenAddress || /^0x0+$/i.test(tokenAddress)) return BigInt(0);
+  try {
+    return await new ethers.Contract(tokenAddress, erc20Abi, provider).balanceOf(userAddress);
+  } catch (err) {
+    console.warn(`balanceOf failed for ${tokenAddress}, treating as 0:`, errorMessage(err));
+    return BigInt(0);
+  }
+}
+
+/**
+ * Reads one reserve's balances for a user. `Pool.getUserReserveData` is the
+ * primary read, but it REVERTS for some real positions (verified on chain:
+ * the Tydro pool returns zeros from getUserAccountData and reverts on
+ * getUserReserveData for accounts holding aToken balances). Every reserve
+ * therefore degrades to aToken / debt-token `balanceOf` reads instead of
+ * blanking the whole position. Returns null only when both reads fail —
+ * that reserve is skipped, never fatal.
+ */
+async function fetchReserveBalances(
+  provider: ethers.Provider,
+  pool: ethers.Contract,
+  reserveAddress: string,
+  userAddress: string
+): Promise<RawReserveBalances | null> {
+  try {
+    const ur = await pool.getUserReserveData(reserveAddress, userAddress);
+    return {
+      suppliedRaw: ur.currentATokenBalance,
+      borrowedRaw: ur.currentVariableDebt + ur.currentStableDebt,
+    };
+  } catch (err) {
+    console.warn(`getUserReserveData failed for ${reserveAddress}, trying balanceOf:`, errorMessage(err));
+  }
+
+  try {
+    const rd = await pool.getReserveData(reserveAddress);
+    const [suppliedRaw, variableDebtRaw, stableDebtRaw] = await Promise.all([
+      fetchTokenBalance(provider, rd.aTokenAddress, userAddress),
+      fetchTokenBalance(provider, rd.variableDebtTokenAddress, userAddress),
+      fetchTokenBalance(provider, rd.stableDebtTokenAddress, userAddress),
+    ]);
+    return { suppliedRaw, borrowedRaw: variableDebtRaw + stableDebtRaw };
+  } catch (err) {
+    console.warn(`balanceOf fallback failed for ${reserveAddress}, skipping reserve:`, errorMessage(err));
+    return null;
+  }
+}
+
 /**
  * Fetches a user's Tydro position (works for connected wallets AND pasted
  * read-only addresses). Returns null when the user has no active position.
+ *
+ * The pool's canonical user reads (getUserAccountData / getUserReserveData)
+ * report ALL ZEROS or revert for some accounts that genuinely hold aToken
+ * balances (verified on chain), so the position is rebuilt from per-reserve
+ * aToken/debt-token `balanceOf` reads whenever the pool reports nothing.
  */
 export async function fetchTydroUserPosition(
   address: string,
@@ -287,42 +365,66 @@ export async function fetchTydroUserPosition(
     getTydroReserveList(provider),
   ]);
 
-  const totalCollateralUsd = Number(ethers.formatUnits(accountData.totalCollateralBase, BASE_CURRENCY_DECIMALS));
-  const totalDebtUsd = Number(ethers.formatUnits(accountData.totalDebtBase, BASE_CURRENCY_DECIMALS));
-  const availableBorrowsUsd = Number(ethers.formatUnits(accountData.availableBorrowsBase, BASE_CURRENCY_DECIMALS));
-  const liquidationThresholdPct = Number(accountData.currentLiquidationThreshold) / 1e4;
-  const ltvPct = Number(accountData.ltv) / 1e4;
-  const healthFactor = formatHealthFactor(accountData.healthFactor);
+  const accountCollateralUsd = Number(
+    ethers.formatUnits(accountData.totalCollateralBase, BASE_CURRENCY_DECIMALS)
+  );
+  const accountDebtUsd = Number(
+    ethers.formatUnits(accountData.totalDebtBase, BASE_CURRENCY_DECIMALS)
+  );
 
-  // No position at all (nothing supplied, nothing borrowed).
-  if (totalCollateralUsd === 0 && totalDebtUsd === 0) return null;
+  // Pass 1 — raw balances per reserve (cheap; no metadata yet). This is the
+  // source of truth even when the pool's account-level reads lie or revert.
+  const rawBalances = await mapWithConcurrency(reserveAddresses, 6, (reserveAddress) =>
+    fetchReserveBalances(provider, pool, reserveAddress, address)
+  );
 
-  const rows = await mapWithConcurrency(reserveAddresses, 6, async (reserveAddress) => {
-    const [userReserve, config, priceRaw, symbol] = await Promise.all([
-      pool.getUserReserveData(reserveAddress, address),
-      pdp.getReserveConfigurationData(reserveAddress),
-      oracle.getAssetPrice(reserveAddress),
-      fetchReserveSymbol(provider, reserveAddress),
-    ]);
-    return {
-      asset: {
-        address: reserveAddress,
-        symbol,
-        decimals: Number(config.decimals),
-        priceUsd: Number(ethers.formatUnits(priceRaw, BASE_CURRENCY_DECIMALS)),
-      } satisfies TydroAssetRef,
-      userReserve,
-    };
+  const pairs: Array<{ reserveAddress: string; balances: RawReserveBalances }> = [];
+  for (let i = 0; i < reserveAddresses.length; i += 1) {
+    const balances = rawBalances[i];
+    if (balances && (balances.suppliedRaw > BigInt(0) || balances.borrowedRaw > BigInt(0))) {
+      pairs.push({ reserveAddress: reserveAddresses[i], balances });
+    }
+  }
+
+  const rows: Array<{
+    asset: TydroAssetRef;
+    suppliedAmount: number;
+    borrowedAmount: number;
+    ltvPct: number;
+    liquidationThresholdPct: number;
+  }> = [];
+
+  // Pass 2 — value only the reserves with actual holdings. One flaky metadata
+  // call skips that reserve, never the whole position.
+  await mapWithConcurrency(pairs, 6, async ({ reserveAddress, balances }) => {
+    try {
+      const [config, priceRaw, symbol] = await Promise.all([
+        pdp.getReserveConfigurationData(reserveAddress),
+        oracle.getAssetPrice(reserveAddress),
+        fetchReserveSymbol(provider, reserveAddress),
+      ]);
+      const decimals = Number(config.decimals);
+      rows.push({
+        asset: {
+          address: reserveAddress,
+          symbol,
+          decimals,
+          priceUsd: Number(ethers.formatUnits(priceRaw, BASE_CURRENCY_DECIMALS)),
+        },
+        suppliedAmount: Number(ethers.formatUnits(balances.suppliedRaw, decimals)),
+        borrowedAmount: Number(ethers.formatUnits(balances.borrowedRaw, decimals)),
+        ltvPct: Number(config.ltv) / 1e4,
+        liquidationThresholdPct: Number(config.liquidationThreshold) / 1e4,
+      });
+    } catch (err) {
+      console.warn(`Tydro reserve ${reserveAddress} metadata failed, skipping:`, errorMessage(err));
+    }
   });
 
   const supplies: TydroUserSupply[] = [];
   const borrows: TydroUserBorrow[] = [];
 
-  for (const { asset, userReserve } of rows) {
-    const suppliedAmount = Number(ethers.formatUnits(userReserve.currentATokenBalance, asset.decimals));
-    const borrowedAmount = Number(
-      ethers.formatUnits(userReserve.currentVariableDebt + userReserve.currentStableDebt, asset.decimals)
-    );
+  for (const { asset, suppliedAmount, borrowedAmount } of rows) {
     if (suppliedAmount > 0) {
       supplies.push({ asset, amount: suppliedAmount, amountUsd: suppliedAmount * asset.priceUsd });
     }
@@ -333,6 +435,55 @@ export async function fetchTydroUserPosition(
 
   supplies.sort((a, b) => b.amountUsd - a.amountUsd);
   borrows.sort((a, b) => b.amountUsd - a.amountUsd);
+
+  // No active position (nothing supplied, nothing borrowed).
+  if (supplies.length === 0 && borrows.length === 0) return null;
+
+  const balanceCollateralUsd = supplies.reduce((sum, r) => sum + r.amountUsd, 0);
+  const balanceDebtUsd = borrows.reduce((sum, r) => sum + r.amountUsd, 0);
+
+  // When the pool reports a real position, its aggregates are canonical and
+  // the per-reserve rows only feed the breakdown. When the pool reports zeros
+  // but token balances exist, the position is rebuilt from those balances.
+  const useAccountData = accountCollateralUsd > 0 || accountDebtUsd > 0;
+
+  let totalCollateralUsd: number;
+  let totalDebtUsd: number;
+  let availableBorrowsUsd: number;
+  let liquidationThresholdPct: number;
+  let ltvPct: number;
+  let healthFactor: number;
+
+  if (useAccountData) {
+    totalCollateralUsd = accountCollateralUsd;
+    totalDebtUsd = accountDebtUsd;
+    availableBorrowsUsd = Number(
+      ethers.formatUnits(accountData.availableBorrowsBase, BASE_CURRENCY_DECIMALS)
+    );
+    liquidationThresholdPct = Number(accountData.currentLiquidationThreshold) / 1e4;
+    ltvPct = Number(accountData.ltv) / 1e4;
+    healthFactor = formatHealthFactor(accountData.healthFactor);
+  } else {
+    totalCollateralUsd = balanceCollateralUsd;
+    totalDebtUsd = balanceDebtUsd;
+    liquidationThresholdPct =
+      balanceCollateralUsd > 0
+        ? rows.reduce(
+            (sum, r) => sum + r.suppliedAmount * r.asset.priceUsd * r.liquidationThresholdPct,
+            0
+          ) / balanceCollateralUsd
+        : 0;
+    ltvPct =
+      balanceCollateralUsd > 0
+        ? rows.reduce((sum, r) => sum + r.suppliedAmount * r.asset.priceUsd * r.ltvPct, 0) /
+          balanceCollateralUsd
+        : 0;
+    healthFactor =
+      balanceDebtUsd > 0 && liquidationThresholdPct > 0
+        ? (balanceCollateralUsd * liquidationThresholdPct) / 100 / balanceDebtUsd
+        : Number.POSITIVE_INFINITY;
+    availableBorrowsUsd = Math.max((balanceCollateralUsd * ltvPct) / 100 - balanceDebtUsd, 0);
+  }
 
   return {
     address,

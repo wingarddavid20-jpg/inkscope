@@ -92,7 +92,9 @@ type IndexerMatch = {
   base_filled?: string;
   quote_filled?: string;
   submission_idx?: string;
-  order?: { sender?: string };
+  realized_pnl?: string;
+  net_entry_unrealized?: string;
+  order?: { sender?: string; digest?: string };
   pre_balance?: {
     base?: {
       perp?: { product_id?: number | string };
@@ -266,6 +268,95 @@ export async function fetchNadoUserTrades(address: string, limit = 10): Promise<
     getNadoTickers(),
   ]);
   return parseMatches(raw, tickers, { onlyTakers: false, owner: address }).slice(0, limit);
+}
+
+// ── Per-address trading stats ────────────────────────────────────────────────
+
+export type NadoUserStats = {
+  /** Total traded notional (Σ |quote_filled|/1e18), USD. */
+  volumeUsd: number;
+  /** Σ realized_pnl/1e18 across fetched fills, USD (taker closing fills). */
+  realizedPnlUsd: number;
+  /** Σ net_entry_unrealized/1e18 across still-open orders, USD. */
+  openPnlUsd: number;
+  /** Distinct orders still open (net_entry_unrealized ≠ 0). */
+  openPositions: number;
+  /** Real fills counted (base_filled ≠ 0). */
+  tradeCount: number;
+  /** Oldest fill time in ms (0 when unknown). */
+  firstTradeAt: number;
+  /** Newest fill time in ms (0 when unknown). */
+  lastTradeAt: number;
+  /** True when the indexer hit its 500-match cap — stats may undercount. */
+  truncated: boolean;
+};
+
+/**
+ * Aggregated trading stats for a wallet's default subaccount. The Nado indexer
+ * caps matches at 500 per request and exposes no working cursor (verified
+ * 2026-08-26), so this reads the latest 500 fills; `truncated` flags when the
+ * cap was hit so the UI can be honest about the window.
+ */
+export async function fetchNadoUserStats(address: string): Promise<NadoUserStats | null> {
+  const MAX = 500;
+  const raw = (await indexerPost({
+    matches: { subaccounts: [getNadoDefaultSubaccount(address)], limit: MAX, desc: true },
+  })) as { matches: IndexerMatch[]; txs: IndexerTx[] };
+  const { matches = [], txs = [] } = raw ?? {};
+
+  const timeBySubmission = new Map<string, number>();
+  for (const tx of txs) {
+    if (tx.submission_idx != null && tx.timestamp != null) {
+      timeBySubmission.set(String(tx.submission_idx), Number(tx.timestamp) * 1000);
+    }
+  }
+
+  let volumeUsd = 0;
+  let realizedPnlUsd = 0;
+  let openPnlUsd = 0;
+  let openPositions = 0;
+  let tradeCount = 0;
+  let firstTradeAt = 0;
+  let lastTradeAt = 0;
+  const openOrderDigests = new Set<string>();
+
+  for (const match of matches) {
+    const baseFilled = BigInt(match.base_filled ?? '0');
+    const quoteFilled = BigInt(match.quote_filled ?? '0');
+    if (baseFilled === BigInt('0') || quoteFilled === BigInt('0')) continue;
+
+    const time = timeBySubmission.get(String(match.submission_idx)) ?? 0;
+    if (time) {
+      if (!firstTradeAt || time < firstTradeAt) firstTradeAt = time;
+      if (time > lastTradeAt) lastTradeAt = time;
+    }
+
+    volumeUsd += Math.abs(Number(quoteFilled)) / X18;
+    realizedPnlUsd += Number(BigInt(match.realized_pnl ?? '0')) / X18;
+    tradeCount += 1;
+
+    // Unrealized PnL is tracked per open order; dedupe across its fills.
+    const unrealized = BigInt(match.net_entry_unrealized ?? '0');
+    if (unrealized !== BigInt('0')) {
+      const orderDigest = match.order?.digest ?? '';
+      if (!orderDigest || !openOrderDigests.has(orderDigest)) openPositions += 1;
+      if (orderDigest) openOrderDigests.add(orderDigest);
+      openPnlUsd += Number(unrealized) / X18;
+    }
+  }
+
+  if (tradeCount === 0) return null;
+
+  return {
+    volumeUsd,
+    realizedPnlUsd,
+    openPnlUsd,
+    openPositions,
+    tradeCount,
+    firstTradeAt,
+    lastTradeAt,
+    truncated: matches.length >= MAX,
+  };
 }
 
 /** Open interest per product (USD). OI is X18 in BASE units × oracle USD price. */

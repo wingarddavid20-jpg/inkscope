@@ -8,6 +8,8 @@ import {
   AlertTriangle,
   RefreshCw,
   History,
+  Lock,
+  Wallet,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,12 +23,17 @@ import type { NadoPair, NadoTrade } from '@/lib/nado';
 type NadoPanelProps = {
   /** Connected wallet or pasted read-only address — enables the "Your Trades" card. */
   address?: string | null;
+  /** True when `address` is the connected wallet — trade history is private. */
+  isOwner?: boolean;
+  /** Invoked when a locked (non-owner) viewer taps Connect. */
+  onConnect?: () => void;
 };
 
-export function NadoPanel({ address }: NadoPanelProps) {
+export function NadoPanel({ address, isOwner = false, onConnect }: NadoPanelProps) {
   const trades = useNadoRecentTrades(30_000);
   const pairs = useNadoTopPairs(30_000);
-  const userTrades = useNadoUserTrades(address, 45_000);
+  // Trade history is private — fetch only when the viewer owns the address.
+  const userTrades = useNadoUserTrades(isOwner ? address : null, 45_000);
 
   const refreshing = trades.loading || pairs.loading || userTrades.loading;
 
@@ -148,21 +155,40 @@ export function NadoPanel({ address }: NadoPanelProps) {
             </div>
           </CardHeader>
           <CardContent>
-            {userTrades.error && !userTrades.data && (
-              <SectionError message={userTrades.error} onRetry={userTrades.refetch} />
-            )}
-            {userTrades.loading && !userTrades.data && <TradesSkeleton rows={4} />}
-            {userTrades.data && userTrades.data.length === 0 && (
-              <p className="py-6 text-center font-body text-sm text-muted-foreground">
-                No Nado trades found for this address yet.
-              </p>
-            )}
-            {userTrades.data && userTrades.data.length > 0 && (
-              <div className="space-y-2">
-                {userTrades.data.map((trade) => (
-                  <TradeRow key={trade.digest} trade={trade} />
-                ))}
+            {!isOwner ? (
+              <div className="flex flex-col items-center rounded-lg border border-border/40 bg-secondary/30 px-4 py-8 text-center">
+                <Lock className="mb-2 h-6 w-6 text-muted-foreground" />
+                <p className="font-display text-sm font-semibold">Trade history is private</p>
+                <p className="mt-1 max-w-sm font-body text-xs leading-relaxed text-muted-foreground">
+                  Connect the wallet that owns this address to see its Nado trade history.
+                </p>
+                <Button
+                  onClick={onConnect}
+                  className="mt-3 gap-2 bg-[#7337F2] font-display text-white transition-all hover:scale-105 hover:bg-[#7337F2]/90 active:scale-95"
+                >
+                  <Wallet className="h-4 w-4" />
+                  Connect Wallet
+                </Button>
               </div>
+            ) : (
+              <>
+                {userTrades.error && !userTrades.data && (
+                  <SectionError message={userTrades.error} onRetry={userTrades.refetch} />
+                )}
+                {userTrades.loading && !userTrades.data && <TradesSkeleton rows={4} />}
+                {userTrades.data && userTrades.data.length === 0 && (
+                  <p className="py-6 text-center font-body text-sm text-muted-foreground">
+                    No Nado trades found for this address yet.
+                  </p>
+                )}
+                {userTrades.data && userTrades.data.length > 0 && (
+                  <div className="space-y-2">
+                    {userTrades.data.map((trade) => (
+                      <TradeRow key={trade.digest} trade={trade} />
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
