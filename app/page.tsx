@@ -3,18 +3,16 @@
 import { useState } from 'react';
 import { Header, type View } from '@/components/site-header';
 import { MetricGrid } from '@/components/metric-card';
-import { TrendChart, LiquidityFlowChart } from '@/components/charts';
 import { BuilderSpotlight } from '@/components/builder-spotlight';
-import { LiquidityFlow } from '@/components/liquidity-flow';
 import { NadoPanel } from '@/components/nado-panel';
 import { TydroPanel } from '@/components/tydro-panel';
 import { MyDashboard } from '@/components/my-dashboard';
-import { Badge } from '@/components/ui/badge';
-import { keyMetrics } from '@/lib/mock-data';
+import { useKeyMetrics } from '@/hooks/use-key-metrics';
 import { useWallet } from '@/hooks/use-wallet';
 
 export default function Home() {
   const { address, connected, connect, disconnect } = useWallet();
+  const { metrics } = useKeyMetrics();
   const [view, setView] = useState<View>('dashboard');
 
   return (
@@ -49,31 +47,19 @@ export default function Home() {
               </p>
             </section>
 
-            {/* Key metrics */}
+            {/* Key metrics — live on-chain */}
             <section className="mb-10">
               <div className="mb-4 flex flex-wrap items-center gap-3">
                 <h2 className="font-display text-lg font-bold accent-line">Key Metrics</h2>
-                <Badge variant="outline" className="border-accent/30 bg-accent/10 font-display text-[10px] text-[#C8B5FF]">
-                  📊 Live Data Coming Soon
-                </Badge>
               </div>
-              <MetricGrid metrics={keyMetrics} />
+              <MetricGrid metrics={metrics} />
             </section>
-
-            {/* Ink Liquidity Flow — NEW */}
-            <LiquidityFlow />
 
             {/* Live protocol panels — Nado (perps) + Tydro (lending) */}
             <div className="mb-12 space-y-12">
               <NadoPanel address={address} />
               <TydroPanel />
             </div>
-
-            {/* Charts */}
-            <section className="mb-12 grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <TrendChart />
-              <LiquidityFlowChart />
-            </section>
 
             {/* Builders */}
             <div className="mb-12">

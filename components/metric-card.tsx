@@ -1,41 +1,28 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { ArrowUpRight, ArrowDownRight, TrendingUp } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { formatCompact, formatNumber, formatPercent } from '@/lib/format';
-import type { Metric } from '@/lib/mock-data';
+import { formatCompact } from '@/lib/format';
 
-type MetricCardProps = {
-  metric: Metric;
-  index: number;
+export type Metric = {
+  label: string;
+  /** null = no data source yet → renders "N/A". */
+  value: number | null;
+  /** True while the first fetch is still in flight. */
+  pending?: boolean;
+  /** Where the value comes from, shown as the card footer. */
+  source: string;
 };
 
-function formatValue(value: number, label: string): string {
-  if (label === 'Active Wallets') return formatNumber(value);
-  return formatCompact(value);
-}
-
-export function MetricCard({ metric, index }: MetricCardProps) {
-  const positive = metric.change >= 0;
-  const [pulsing, setPulsing] = useState(false);
-
-  // Simulate periodic data refresh pulse
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setPulsing(true);
-      setTimeout(() => setPulsing(false), 800);
-    }, 8000 + index * 1200);
-    return () => clearInterval(interval);
-  }, [index]);
+export function MetricCard({ metric, index }: { metric: Metric; index: number }) {
+  const value = metric.value;
+  const hasValue = value !== null;
 
   return (
     <Card
-      className={cn(
-        'metric-card glass relative overflow-hidden border-border/60 p-5 animate-fade-in-up',
-        pulsing && 'animate-data-pulse'
-      )}
+      className="metric-card glass relative overflow-hidden border-border/60 p-5 animate-fade-in-up"
       style={{ animationDelay: `${index * 80}ms` }}
     >
       {/* Accent corner glow */}
@@ -45,71 +32,38 @@ export function MetricCard({ metric, index }: MetricCardProps) {
         <span className="font-display text-xs font-medium uppercase tracking-wider text-muted-foreground">
           {metric.label}
         </span>
-        <span
-          className={cn(
-            'flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold',
-            positive
-              ? 'bg-emerald-500/10 text-emerald-400'
-              : 'bg-red-500/10 text-red-400'
-          )}
-        >
-          {positive ? (
-            <ArrowUpRight className="h-3 w-3" />
-          ) : (
-            <ArrowDownRight className="h-3 w-3" />
-          )}
-          {formatPercent(metric.change)}
-        </span>
+        {hasValue ? (
+          <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-400">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+            Live
+          </span>
+        ) : (
+          <span className="rounded-full bg-secondary/60 px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+            Unavailable
+          </span>
+        )}
       </div>
 
       <div className="relative mt-3">
-        <p className="font-display text-3xl font-bold tracking-tight">
-          {formatValue(metric.value, metric.label)}
-        </p>
+        {metric.pending && !hasValue ? (
+          <Skeleton className="h-9 w-28" />
+        ) : (
+          <p
+            className={cn(
+              'font-display text-3xl font-bold tracking-tight',
+              !hasValue && 'text-muted-foreground/70'
+            )}
+          >
+            {hasValue ? formatCompact(value) : 'N/A'}
+          </p>
+        )}
       </div>
 
-      {/* Sparkline */}
-      <div className="relative mt-4 h-10">
-        <Sparkline data={metric.spark} positive={positive} />
+      <div className="relative mt-4 flex items-center gap-1.5 border-t border-border/40 pt-3">
+        <TrendingUp className="h-3 w-3 text-muted-foreground" />
+        <span className="font-body text-xs text-muted-foreground">{metric.source}</span>
       </div>
     </Card>
-  );
-}
-
-function Sparkline({ data, positive }: { data: number[]; positive: boolean }) {
-  const max = Math.max(...data);
-  const min = Math.min(...data);
-  const range = max - min || 1;
-  const width = 100;
-  const height = 36;
-  const step = width / (data.length - 1);
-
-  const points = data.map((v, i) => {
-    const x = i * step;
-    const y = height - ((v - min) / range) * height;
-    return `${x},${y}`;
-  });
-
-  const pathD = `M ${points.join(' L ')}`;
-  const areaD = `${pathD} L ${width},${height} L 0,${height} Z`;
-  const color = positive ? 'hsl(var(--chart-2))' : 'hsl(var(--chart-5))';
-
-  return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      preserveAspectRatio="none"
-      className="h-full w-full"
-      aria-hidden="true"
-    >
-      <defs>
-        <linearGradient id={`spark-${positive ? 'up' : 'down'}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.35" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={areaD} fill={`url(#spark-${positive ? 'up' : 'down'})`} />
-      <path d={pathD} fill="none" stroke={color} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-    </svg>
   );
 }
 
@@ -119,15 +73,6 @@ export function MetricGrid({ metrics }: { metrics: Metric[] }) {
       {metrics.map((metric, i) => (
         <MetricCard key={metric.label} metric={metric} index={i} />
       ))}
-    </div>
-  );
-}
-
-export function MetricCardFooter({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-      <TrendingUp className="h-3 w-3" />
-      {label}
     </div>
   );
 }

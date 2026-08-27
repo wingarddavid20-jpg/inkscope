@@ -16,8 +16,15 @@ export function useWallet() {
   const [chainId, setChainId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Check if wallet is already connected on initial load
+  // Check if wallet is already connected on initial load, and re-check whenever
+  // the tab regains focus. Wallets update their account state while the tab is
+  // unfocused (e.g. the user unlocks the extension or approves the site in
+  // another tab) and do NOT always fire `accountsChanged`, so a one-shot check
+  // on mount can leave the UI showing "Connect Wallet" while the wallet is
+  // actually connected.
   useEffect(() => {
+    let cancelled = false;
+
     const checkConnection = async () => {
       const ethereum = getEthereumProvider();
       if (!ethereum) return;
@@ -25,9 +32,7 @@ export function useWallet() {
       try {
         const provider = new ethers.BrowserProvider(ethereum);
         const accounts: string[] = await provider.send('eth_accounts', []);
-        const network = await provider.getNetwork();
-        setChainId(Number(network.chainId));
-
+        if (cancelled) return;
         if (accounts && accounts.length > 0) {
           setAddress(accounts[0]);
           setConnected(true);
@@ -35,9 +40,31 @@ export function useWallet() {
       } catch (err) {
         console.error('Error checking existing wallet connection:', err);
       }
+
+      // Network info is secondary — a wallet can be connected even when this
+      // call fails, so it must never block the connected state above.
+      try {
+        const provider = new ethers.BrowserProvider(ethereum);
+        const network = await provider.getNetwork();
+        if (!cancelled) setChainId(Number(network.chainId));
+      } catch (err) {
+        console.error('Error reading wallet network:', err);
+      }
     };
 
-    checkConnection();
+    void checkConnection();
+
+    const handleRecheck = () => {
+      if (document.visibilityState === 'visible') void checkConnection();
+    };
+    window.addEventListener('focus', handleRecheck);
+    document.addEventListener('visibilitychange', handleRecheck);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('focus', handleRecheck);
+      document.removeEventListener('visibilitychange', handleRecheck);
+    };
   }, []);
 
   // Listen to provider events (accountsChanged, chainChanged)

@@ -71,7 +71,7 @@ export function TydroPanel() {
         </Button>
       </div>
 
-      {error && !data && <ErrorCard message={error} onRetry={refetch} />}
+      {error && !data && <ErrorCard onRetry={refetch} />}
 
       {!data && !error && <PanelSkeleton />}
 
@@ -169,8 +169,9 @@ function TydroBody({
                 detail={
                   rpcFallback
                     ? 'Reserves are streaming from RPC while the Tydro subgraph catches up — at-risk accounts appear here automatically once it indexes positions.'
-                    : positionsError ??
-                      'Users with a health factor below 1.5 will appear here as soon as the subgraph indexes positions.'
+                    : positionsError
+                      ? 'Subgraph syncing — check back soon'
+                      : 'Users with a health factor below 1.5 will appear here as soon as the subgraph indexes positions.'
                 }
               />
             )}
@@ -402,8 +403,9 @@ function LeaderPlaceholder({
       detail={
         rpcFallback
           ? 'Top accounts appear here once the Tydro subgraph indexes positions.'
-          : positionsError ??
-            `The top ${label} table will populate as soon as the subgraph has position data.`
+          : positionsError
+            ? 'Subgraph syncing — check back soon'
+            : `The top ${label} table will populate as soon as the subgraph has position data.`
       }
     />
   );
@@ -437,12 +439,14 @@ function IndexerPlaceholder({
   );
 }
 
-function ErrorCard({ message, onRetry }: { message: string; onRetry: () => void }) {
+function ErrorCard({ onRetry }: { onRetry: () => void }) {
   return (
     <Card className="glass mb-4 border-rose-400/30 bg-rose-500/[0.04] p-8 text-center animate-fade-in-up">
       <AlertTriangle className="mx-auto mb-3 h-8 w-8 text-rose-300" />
       <p className="font-display text-base font-bold">Couldn&apos;t load Tydro data</p>
-      <p className="mx-auto mt-1 max-w-md font-body text-sm text-muted-foreground">{message}</p>
+      <p className="mx-auto mt-1 max-w-md font-body text-sm text-muted-foreground">
+        Subgraph syncing — check back soon.
+      </p>
       <Button
         onClick={onRetry}
         variant="outline"
