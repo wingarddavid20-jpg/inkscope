@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatCompact, formatAddress } from '@/lib/format';
+import { RiskBadge } from '@/components/risk-badge';
 import { useTydroPanelData } from '@/hooks/use-tydro-subgraph';
 import type { TydroOverview, TydroReserve } from '@/lib/tydro';
 import type { TydroRiskPosition, TydroLeader } from '@/lib/queries/tydro';
@@ -321,12 +322,6 @@ function ReserveRow({ reserve }: { reserve: TydroReserve }) {
 
 function RiskRow({ position }: { position: TydroRiskPosition }) {
   const hf = position.healthFactor;
-  const tone =
-    hf < 1
-      ? 'border-rose-400/30 bg-rose-500/10 text-rose-300'
-      : hf < 1.1
-        ? 'border-amber-400/30 bg-amber-500/10 text-amber-300'
-        : 'border-emerald-400/30 bg-emerald-500/10 text-emerald-300';
   return (
     <div className="flex items-center justify-between gap-2 py-2">
       <div className="min-w-0">
@@ -337,9 +332,10 @@ function RiskRow({ position }: { position: TydroRiskPosition }) {
           {formatCompact(position.collateralUsd)} collateral · {formatCompact(position.debtUsd)} debt
         </p>
       </div>
-      <Badge variant="outline" className={cn('shrink-0 font-display text-[10px]', tone)}>
-        HF {hf.toFixed(2)}
-      </Badge>
+      <div className="flex shrink-0 items-center gap-2">
+        <span className="font-mono text-[10px] text-muted-foreground">HF {hf.toFixed(2)}</span>
+        <RiskBadge healthFactor={hf} />
+      </div>
     </div>
   );
 }

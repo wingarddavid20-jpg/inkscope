@@ -1,0 +1,76 @@
+{
+  "protocols": [
+    {
+      "id": "tydro",
+      "name": "Tydro",
+      "slugs": ["tydro"],
+      "source": "rpc",
+      "category": "Lending",
+      "url": null,
+      "description": "Aave V3 white-label lending — the native money market on Ink."
+    },
+    {
+      "id": "nado",
+      "name": "Nado",
+      "slugs": ["nado"],
+      "source": "indexer",
+      "category": "Perpetual DEX",
+      "url": null,
+      "description": "Off-chain matched perps with on-chain settlement."
+    },
+    {
+      "id": "veda",
+      "name": "Veda",
+      "slugs": ["veda"],
+      "source": "defillama",
+      "category": "Lending",
+      "url": null,
+      "description": "Fully collateralized lending on Ink."
+    },
+    {
+      "id": "sentora",
+      "name": "Sentora",
+      "slugs": ["sentora"],
+      "source": "defillama",
+      "category": "Lending",
+      "url": null,
+      "description": "Overcollateralized lending with isolated markets."
+    },
+    {
+      "id": "velodrome",
+      "name": "Velodrome",
+      "slugs": ["velodrome", "velodrome-v2"],
+      "source": "defillama",
+      "category": "DEX",
+      "url": null,
+      "description": "Liquidity hub — swap, pool, and vote."
+    },
+    {
+      "id": "uniswap-v4",
+      "name": "Uniswap V4",
+      "slugs": ["uniswap-v4"],
+      "source": "defillama",
+      "category": "DEX",
+      "url": null,
+      "description": "Permissionless swaps with concentrated and custom liquidity."
+    },
+    {
+      "id": "curve",
+      "name": "Curve",
+      "slugs": ["curve"],
+      "source": "defillama",
+      "category": "DEX",
+      "url": null,
+      "description": "Stable-swap DEX for low-slippage trades."
+    },
+    {
+      "id": "morpho-blue",
+      "name": "Morpho Blue",
+      "slugs": ["morpho-blue"],
+      "source": "defillama",
+      "category": "Lending",
+      "url": null,
+      "description": "Permissionless lending markets with isolated collateral."
+    }
+  ]
+}

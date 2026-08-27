@@ -170,6 +170,43 @@ export function formatHealthFactor(raw: bigint): number {
   return Number(raw) / 1e18;
 }
 
+/**
+ * Categorizes a Tydro position's health factor into an hl.eco-style risk
+ * band. Health factor of Infinity (no debt) is always Conservative.
+ */
+export const getRiskLevel = (healthFactor: number): {
+  label: 'Conservative' | 'Balanced' | 'Aggressive' | 'At Risk';
+  color: 'green' | 'yellow' | 'orange' | 'red';
+  description: string;
+} => {
+  if (healthFactor > 3) {
+    return {
+      label: 'Conservative',
+      color: 'green',
+      description: 'Low risk — liquidation unlikely'
+    };
+  }
+  if (healthFactor > 1.5) {
+    return {
+      label: 'Balanced',
+      color: 'yellow',
+      description: 'Moderate risk — monitor your position'
+    };
+  }
+  if (healthFactor > 1.1) {
+    return {
+      label: 'Aggressive',
+      color: 'orange',
+      description: 'High risk — close to liquidation threshold'
+    };
+  }
+  return {
+    label: 'At Risk',
+    color: 'red',
+    description: 'Critical — immediate action recommended'
+  };
+};
+
 function errorMessage(err: unknown): string {
   if (err instanceof Error) {
     const short = (err as any).shortMessage as string | undefined;

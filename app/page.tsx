@@ -6,6 +6,7 @@ import { MetricGrid } from '@/components/metric-card';
 import { BuilderSpotlight } from '@/components/builder-spotlight';
 import { NadoPanel } from '@/components/nado-panel';
 import { TydroPanel } from '@/components/tydro-panel';
+import { EcosystemPanel } from '@/components/ecosystem-panel';
 import { MyDashboard } from '@/components/my-dashboard';
 import { useKeyMetrics } from '@/hooks/use-key-metrics';
 import { useWallet } from '@/hooks/use-wallet';
@@ -53,6 +54,11 @@ export default function Home() {
                 <h2 className="font-display text-lg font-bold accent-line">Key Metrics</h2>
               </div>
               <MetricGrid metrics={metrics} />
+            </section>
+
+            {/* Ink Ecosystem — live TVL & volume across top protocols */}
+            <section className="mb-12">
+              <EcosystemPanel />
             </section>
 
             {/* Live protocol panels — Nado (perps) + Tydro (lending) */}

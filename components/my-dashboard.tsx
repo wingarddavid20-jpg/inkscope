@@ -23,9 +23,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { formatCompact, timeAgo } from '@/lib/format';
+import { getRiskLevel } from '@/lib/tydro';
 import { cn } from '@/lib/utils';
 import { useTydroUserPosition } from '@/hooks/use-tydro';
 import { useNadoUserStats } from '@/hooks/use-nado';
+import { RiskBadge } from '@/components/risk-badge';
 import { TydroPanel } from '@/components/tydro-panel';
 import { NadoPanel } from '@/components/nado-panel';
 
@@ -175,15 +177,6 @@ export function MyDashboard({ connected, address, onConnect, onDisconnect }: MyD
   const healthPercent = healthFactor
     ? Math.min((Math.min(healthFactor, 4) / 4) * 100, 100)
     : 0;
-  const positionStatus = !healthFactor
-    ? { label: 'Loading…', color: 'text-muted-foreground' }
-    : !Number.isFinite(healthFactor)
-      ? { label: 'No debt · Safe', color: 'text-emerald-300' }
-      : healthFactor >= 1.5
-        ? { label: 'Safe · above liquidation', color: 'text-emerald-300' }
-        : healthFactor >= 1.1
-          ? { label: 'Elevated risk', color: 'text-amber-300' }
-          : { label: 'Near liquidation', color: 'text-rose-300' };
 
   return (
     <div className="space-y-4">
@@ -282,9 +275,12 @@ export function MyDashboard({ connected, address, onConnect, onDisconnect }: MyD
                       : '∞'}
                   </p>
                   <Progress value={healthPercent} className="mt-2 h-1.5 bg-secondary" />
-                  <p className={cn('mt-1.5 font-body text-xs', positionStatus.color)}>
-                    {positionStatus.label}
-                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <RiskBadge healthFactor={tydroPosition.healthFactor} />
+                    <span className="font-body text-xs text-muted-foreground">
+                      {getRiskLevel(tydroPosition.healthFactor).description}
+                    </span>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 border-t border-border/40 pt-3">
                   <div>
