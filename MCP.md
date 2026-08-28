@@ -41,7 +41,7 @@ All tools are read-only and reuse the dashboard's own data layer (on-chain RPC, 
 | `get_risk_level` | Map a Tydro health factor to a risk band (Conservative / Balanced / Aggressive / At Risk) with color + description. | `healthFactor`: number, or the string `"Infinity"` for no-debt positions |
 | `get_tydro_overview` | Live Tydro protocol overview: TVL, borrows, utilization, available liquidity, per-reserve supply/borrow/APY. | — |
 | `get_tydro_position` | Live Tydro position for an address: collateral, debt, health factor. `null` when the address has no position. | `address`: `0x` + 40 hex chars |
-| `get_ink_ecosystem` | Ecosystem TVL/24h data: Tydro (RPC), Nado (indexer), and third-party protocols via DefiLlama (Veda, Sentora, Velodrome, Uniswap V4, Curve, Morpho Blue). | — |
+| `get_ink_ecosystem` | Ecosystem TVL/24h data: Tydro, Veda, Sentora, Velodrome, Uniswap V4, Curve, Morpho Blue via DefiLlama (Ink chainTvls); Nado TVL = total open interest (indexer + on-chain); Tydro borrows via RPC. | — |
 | `get_nado_stats` | Nado perps stats: top pairs by 24h volume (price, change, open interest) + total 24h volume. | `limit?`: number, default 8, max 20 |
 | `get_key_metrics` | Dashboard key metrics: Tydro TVL, borrows, utilization + Nado 24h volume. | — |
 

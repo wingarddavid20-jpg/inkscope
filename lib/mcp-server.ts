@@ -79,7 +79,7 @@ const TOOLS: Tool[] = [
   {
     name: 'get_ink_ecosystem',
     description:
-      'Ink ecosystem overview: TVL and 24h data for Tydro (on-chain RPC), Nado (indexer), and third-party protocols (Veda, Sentora, Velodrome, Uniswap V4, Curve, Morpho Blue) via DefiLlama.',
+      'Ink ecosystem overview: TVL for Tydro, Veda, Sentora, Velodrome, Uniswap V4, Curve, Morpho Blue via DefiLlama (Ink chainTvls); Nado TVL = total open interest (indexer + on-chain); Tydro borrows via RPC.',
     inputSchema: { type: 'object', properties: {} },
   },
   {

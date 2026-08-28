@@ -4,7 +4,7 @@
       "id": "tydro",
       "name": "Tydro",
       "slugs": ["tydro"],
-      "source": "rpc",
+      "source": "defillama",
       "category": "Lending",
       "url": null,
       "description": "Aave V3 white-label lending — the native money market on Ink."
@@ -57,7 +57,7 @@
     {
       "id": "curve",
       "name": "Curve",
-      "slugs": ["curve"],
+      "slugs": ["curve-dex"],
       "source": "defillama",
       "category": "DEX",
       "url": null,

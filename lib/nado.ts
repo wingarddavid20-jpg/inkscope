@@ -359,6 +359,25 @@ export async function fetchNadoUserStats(address: string): Promise<NadoUserStats
   };
 }
 
+/**
+ * Total open interest across ALL products, in USD. OI is read on-chain from
+ * the Querier (Σ openInterest/1e18 base × oraclePrice/1e18 USD) — the same
+ * source fetchNadoTopPairs uses, but for every product the indexer lists.
+ * Returns null when nothing is listed or the on-chain read fails entirely.
+ */
+export async function fetchNadoTotalOpenInterestUsd(): Promise<number | null> {
+  const tickers = await getNadoTickers();
+  const productIds = Array.from(tickers.keys());
+  if (productIds.length === 0) return null;
+  const oi = await fetchOpenInterestUsd(productIds);
+  if (oi.size === 0) return null;
+  let total = 0;
+  oi.forEach((usd) => {
+    total += usd;
+  });
+  return total;
+}
+
 /** Open interest per product (USD). OI is X18 in BASE units × oracle USD price. */
 async function fetchOpenInterestUsd(productIds: number[]): Promise<Map<number, number>> {
   const map = new Map<number, number>();
