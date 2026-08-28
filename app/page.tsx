@@ -7,6 +7,8 @@ import { BuilderSpotlight } from '@/components/builder-spotlight';
 import { NadoPanel } from '@/components/nado-panel';
 import { TydroPanel } from '@/components/tydro-panel';
 import { EcosystemPanel } from '@/components/ecosystem-panel';
+import { TrendingNfts } from '@/components/trending-nfts';
+import { DexHub } from '@/components/dex-hub';
 import { MyDashboard } from '@/components/my-dashboard';
 import { useKeyMetrics } from '@/hooks/use-key-metrics';
 import { useWallet } from '@/hooks/use-wallet';
@@ -59,6 +61,16 @@ export default function Home() {
             {/* Ink Ecosystem — live TVL & volume across top protocols */}
             <section className="mb-12">
               <EcosystemPanel />
+            </section>
+
+            {/* Trending NFTs — top collections on Ink */}
+            <section className="mb-12">
+              <TrendingNfts />
+            </section>
+
+            {/* DEX Hub — where to trade on Ink */}
+            <section className="mb-12">
+              <DexHub />
             </section>
 
             {/* Live protocol panels — Nado (perps) + Tydro (lending) */}

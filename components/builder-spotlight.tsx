@@ -20,11 +20,18 @@ export function BuilderSpotlight() {
           </div>
         </div>
         <Button
+          asChild
           variant="outline"
           className="hidden gap-2 font-display transition-all hover:scale-105 hover:border-accent hover:text-accent sm:flex"
         >
-          Launch your app
-          <Rocket className="h-4 w-4" />
+          <a
+            href="https://docs.inkonchain.com"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Launch your app
+            <Rocket className="h-4 w-4" />
+          </a>
         </Button>
       </div>
 
@@ -48,9 +55,18 @@ export function BuilderSpotlight() {
               Ship your app and get featured in the spotlight.
             </p>
           </div>
-          <Button className="gap-2 bg-accent font-display text-accent-foreground transition-all hover:scale-105 hover:bg-accent/90 active:scale-95">
-            Launch your app
-            <ArrowRight className="h-4 w-4" />
+          <Button
+            asChild
+            className="gap-2 bg-accent font-display text-accent-foreground transition-all hover:scale-105 hover:bg-accent/90 active:scale-95"
+          >
+            <a
+              href="https://docs.inkonchain.com"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Launch your app
+              <ArrowRight className="h-4 w-4" />
+            </a>
           </Button>
         </div>
       </Card>

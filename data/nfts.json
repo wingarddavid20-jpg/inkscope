@@ -1,0 +1,20 @@
+[
+  {
+    "id": "templars-of-the-storm",
+    "name": "Templars of the Storm",
+    "logo": "/logos/templars.png",
+    "floorPrice": 0.42,
+    "volume24h": 12.5,
+    "totalSupply": 10000,
+    "url": "https://opensea.io/collection/templars-of-the-storm"
+  },
+  {
+    "id": "ink-dragons",
+    "name": "Ink Dragons",
+    "logo": "/logos/dragons.png",
+    "floorPrice": 0.18,
+    "volume24h": 8.2,
+    "totalSupply": 5000,
+    "url": "https://opensea.io/collection/ink-dragons"
+  }
+]

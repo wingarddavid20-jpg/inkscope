@@ -1,0 +1,20 @@
+[
+  {
+    "id": "inkyswap",
+    "name": "InkySwap",
+    "logo": "/logos/inkyswap.png",
+    "tvl": 45000000,
+    "volume24h": 9400000,
+    "topPair": "WETH/USDC",
+    "url": "https://inkyswap.com"
+  },
+  {
+    "id": "squidswap",
+    "name": "SquidSwap",
+    "logo": "/logos/squidswap.png",
+    "tvl": 12000000,
+    "volume24h": 3200000,
+    "topPair": "WETH/USDC",
+    "url": "https://squidswap.com"
+  }
+]
