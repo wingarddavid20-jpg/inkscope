@@ -1,0 +1,36 @@
+enum Direction {
+  inbound
+  outbound
+}
+
+enum CexFlowType {
+  deposit
+  withdrawal
+}
+
+type BridgeTransfer @entity(immutable: true) {
+  id: ID!          # `${txHash}-${logIndex}`
+  hash: Bytes!
+  fromChain: String!
+  toChain: String!
+  from: Bytes!
+  to: Bytes!
+  token: Bytes!
+  amount: BigInt!        # raw token units
+  amountUsd: BigDecimal! # USD value at transfer time
+  direction: Direction!  # to-bridge = outbound, from-bridge = inbound
+  timestamp: BigInt!
+}
+
+type CexTransfer @entity(immutable: true) {
+  id: ID!
+  hash: Bytes!
+  from: Bytes!
+  to: Bytes!
+  token: Bytes!
+  amount: BigInt!
+  amountUsd: BigDecimal!
+  type: CexFlowType!     # deposit (to wallet) | withdrawal (from wallet)
+  direction: Direction!  # deposit = inbound, withdrawal = outbound
+  timestamp: BigInt!
+}

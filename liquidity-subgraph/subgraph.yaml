@@ -1,0 +1,98 @@
+specVersion: 0.0.6
+description: Inkscope liquidity flows — bridge (Across) and CEX (Kraken/Bitfinex) transfers on Ink
+repository: https://github.com/wingarddavid20-jpg/inkscope
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: USDC
+    network: ink
+    source:
+      address: "0x2D270e6886d130D724215A266106e6832161EAEd"
+      abi: IERC20
+      startBlock: 53928036
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - BridgeTransfer
+        - CexTransfer
+      abis:
+        - name: IERC20
+          file: ./abis/IERC20.json
+        - name: AaveOracle
+          file: ./abis/AaveOracle.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: ./src/liquidity.ts
+  - kind: ethereum/contract
+    name: USDCE
+    network: ink
+    source:
+      address: "0xF1815bd50389c46847f0Bda824eC8da914045D14"
+      abi: IERC20
+      startBlock: 53928036
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - BridgeTransfer
+        - CexTransfer
+      abis:
+        - name: IERC20
+          file: ./abis/IERC20.json
+        - name: AaveOracle
+          file: ./abis/AaveOracle.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: ./src/liquidity.ts
+  - kind: ethereum/contract
+    name: USDT0
+    network: ink
+    source:
+      address: "0x0200C29006150606B650577BBE7B6248F58470c1"
+      abi: IERC20
+      startBlock: 53928036
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - BridgeTransfer
+        - CexTransfer
+      abis:
+        - name: IERC20
+          file: ./abis/IERC20.json
+        - name: AaveOracle
+          file: ./abis/AaveOracle.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: ./src/liquidity.ts
+  - kind: ethereum/contract
+    name: WETH
+    network: ink
+    source:
+      address: "0x4200000000000000000000000000000000000006"
+      abi: IERC20
+      startBlock: 53928036
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - BridgeTransfer
+        - CexTransfer
+      abis:
+        - name: IERC20
+          file: ./abis/IERC20.json
+        - name: AaveOracle
+          file: ./abis/AaveOracle.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: ./src/liquidity.ts

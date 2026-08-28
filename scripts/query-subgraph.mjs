@@ -1,19 +1,31 @@
-// Dev tool: runs an ad-hoc GraphQL query against the Tydro subgraph on Goldsky.
+// Dev tool: runs an ad-hoc GraphQL query against an Inkscope subgraph on Goldsky.
 // Usage:
 //   node scripts/query-subgraph.mjs "{ reserves { symbol utilizationRate } }"
 //   node scripts/query-subgraph.mjs "{ reserve(id: \"0x...\") { symbol } }" '{"var": "value"}'
-// Reads the endpoint from NEXT_PUBLIC_GRAPHQL_ENDPOINT in .env.local at runtime.
+//   node scripts/query-subgraph.mjs "{ bridgeTransfers(first: 5) { id } }" "" "https://.../gn"
+// Endpoint resolution: optional 3rd arg > NEXT_PUBLIC_GOLDSKY_ENDPOINT > NEXT_PUBLIC_GRAPHQL_ENDPOINT.
+// Reads .env.local at runtime.
 import { readFileSync } from 'node:fs';
 
 const env = readFileSync(new URL('../.env.local', import.meta.url), 'utf8');
-const endpoint = env.match(/^NEXT_PUBLIC_GRAPHQL_ENDPOINT=(.*)$/m)?.[1]?.trim();
+const envEndpoint =
+  env.match(/^NEXT_PUBLIC_GOLDSKY_ENDPOINT=(.*)$/m)?.[1]?.trim() ??
+  env.match(/^NEXT_PUBLIC_GRAPHQL_ENDPOINT=(.*)$/m)?.[1]?.trim();
 
-if (!endpoint) {
-  console.error('NEXT_PUBLIC_GRAPHQL_ENDPOINT missing in .env.local');
-  process.exit(1);
+const [query, arg2, arg3] = process.argv.slice(2);
+let endpoint = envEndpoint;
+let variablesArg;
+if (arg2 && arg2.startsWith('http')) {
+  endpoint = arg2; // endpoint passed without variables
+} else {
+  variablesArg = arg2;
+  if (arg3) endpoint = arg3; // explicit endpoint as 3rd arg
 }
 
-const [query, variablesArg] = process.argv.slice(2);
+if (!endpoint) {
+  console.error('No endpoint: pass one as the 3rd arg or set NEXT_PUBLIC_GOLDSKY_ENDPOINT / NEXT_PUBLIC_GRAPHQL_ENDPOINT in .env.local');
+  process.exit(1);
+}
 
 if (!query) {
   console.error('Usage: node scripts/query-subgraph.mjs "<graphql query>" ["<variables json>"]');

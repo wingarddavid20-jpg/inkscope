@@ -37,3 +37,8 @@ next-env.d.ts
 
 # vendored clone (own git repo) used to build the Goldsky subgraph
 /protocol-subgraphs/
+
+# standalone liquidity subgraph (build artifacts; regenerated via `npm run codegen`)
+/liquidity-subgraph/node_modules/
+/liquidity-subgraph/generated/
+/liquidity-subgraph/build/
