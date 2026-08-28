@@ -16,11 +16,11 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: 'Ink — Builder Dashboard',
+  title: 'InkBoard — Ink Ecosystem Dashboard',
   description:
     'On-chain analytics for the Ink blockchain. Track Tydro & Nado protocols — TVL, volume, positions, and the builders shipping on top.',
   openGraph: {
-    title: 'Ink — Builder Dashboard',
+    title: 'InkBoard — Ink Ecosystem Dashboard',
     description:
       'On-chain analytics for the Ink blockchain. Track Tydro & Nado protocols.',
     images: [{ url: 'https://bolt.new/static/og_default.png' }],

@@ -24,7 +24,7 @@ type NavLink = {
 };
 
 const navLinks: NavLink[] = [
-  { label: 'Dashboard', view: 'dashboard', icon: <BarChart3 className="h-4 w-4" /> },
+  { label: 'InkBoard', view: 'dashboard', icon: <BarChart3 className="h-4 w-4" /> },
   { label: 'My Dashboard', view: 'my-dashboard', icon: <LayoutDashboard className="h-4 w-4" /> },
   { label: 'Tydro', href: '#tydro', icon: <Droplets className="h-4 w-4" /> },
   { label: 'Nado', href: '#nado', icon: <Sparkles className="h-4 w-4" /> },
@@ -120,9 +120,6 @@ export function Header({ connected, address, onConnect, onDisconnect, view, onVi
         <div className="flex items-center gap-2.5 md:flex-1">
           <InkLogo />
           <span className="font-display text-xl font-bold tracking-tight">Ink</span>
-          <span className="hidden font-body text-sm text-muted-foreground sm:inline">
-            / builder dashboard
-          </span>
         </div>
 
         {/* Desktop nav */}

@@ -7,7 +7,6 @@ import {
   PieChart,
   ArrowUpRight,
   ArrowDownRight,
-  Sparkles,
   ClipboardPaste,
   RefreshCw,
   Lock,
@@ -21,15 +20,12 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { formatCompact, timeAgo } from '@/lib/format';
 import { getRiskLevel } from '@/lib/tydro';
 import { cn } from '@/lib/utils';
 import { useTydroUserPosition } from '@/hooks/use-tydro';
 import { useNadoUserStats } from '@/hooks/use-nado';
 import { RiskBadge } from '@/components/risk-badge';
-import { TydroPanel } from '@/components/tydro-panel';
-import { NadoPanel } from '@/components/nado-panel';
 
 type MyDashboardProps = {
   connected: boolean;
@@ -318,7 +314,7 @@ export function MyDashboard({ connected, address, onConnect, onDisconnect }: MyD
 
             {!positionLoading && !positionError && !tydroPosition && (
               <p className="py-2 font-body text-sm text-muted-foreground">
-                No active Tydro position for this address.
+                No position found
               </p>
             )}
           </CardContent>
@@ -416,7 +412,7 @@ export function MyDashboard({ connected, address, onConnect, onDisconnect }: MyD
               </>
             ) : (
               <p className="py-2 font-body text-sm text-muted-foreground">
-                No Nado trades found for this address yet.
+                No trades found
               </p>
             )}
           </CardContent>
@@ -452,33 +448,6 @@ export function MyDashboard({ connected, address, onConnect, onDisconnect }: MyD
             </div>
           </CardContent>
         </Card>
-      </div>
-
-      {/* Tydro & Nado protocol tabs */}
-      <div className="mt-2">
-        <Tabs defaultValue="tydro">
-          <div className="mb-4 flex items-center gap-3">
-            <TabsList className="bg-secondary/60">
-              <TabsTrigger value="tydro" className="gap-2 font-display text-sm">
-                <ShieldCheck className="h-4 w-4" />
-                Tydro
-              </TabsTrigger>
-              <TabsTrigger value="nado" className="gap-2 font-display text-sm">
-                <Sparkles className="h-4 w-4" />
-                Nado
-              </TabsTrigger>
-            </TabsList>
-            <span className="font-body text-xs text-muted-foreground">Protocol deep-dive</span>
-          </div>
-
-          <TabsContent value="tydro" className="mt-0">
-            <TydroPanel />
-          </TabsContent>
-
-          <TabsContent value="nado" className="mt-0">
-            <NadoPanel address={activeAddress} isOwner={isOwner} onConnect={onConnect} />
-          </TabsContent>
-        </Tabs>
       </div>
     </div>
   );
