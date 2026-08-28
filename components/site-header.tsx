@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Menu, X, Wallet, LogOut, Droplets, BarChart3, Sparkles, ExternalLink, LayoutDashboard, Globe } from 'lucide-react';
+import { Menu, X, Wallet, LogOut, BarChart3, ExternalLink, LayoutDashboard, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
@@ -26,8 +26,6 @@ type NavLink = {
 const navLinks: NavLink[] = [
   { label: 'InkBoard', view: 'dashboard', icon: <BarChart3 className="h-4 w-4" /> },
   { label: 'My Dashboard', view: 'my-dashboard', icon: <LayoutDashboard className="h-4 w-4" /> },
-  { label: 'Tydro', href: '#tydro', icon: <Droplets className="h-4 w-4" /> },
-  { label: 'Nado', href: '#nado', icon: <Sparkles className="h-4 w-4" /> },
   { label: 'Ecosystem', href: '#ecosystem', icon: <Globe className="h-4 w-4" /> },
   { label: 'Builders', href: '#builders', icon: <ExternalLink className="h-4 w-4" /> },
 ];
