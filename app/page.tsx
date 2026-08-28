@@ -42,12 +42,11 @@ export default function Home() {
                 </span>
               </div>
               <h1 className="font-display text-4xl font-bold tracking-tight sm:text-5xl">
-                Your builder&apos;s space
-                <span className="text-[#A78BFA]">.</span>
+                The Ink Ecosystem Dashboard
               </h1>
               <p className="mt-3 max-w-2xl font-body text-lg text-muted-foreground">
-                On-chain analytics for the Ink blockchain — track Tydro &amp; Nado,
-                monitor your positions, and celebrate proof of work from the community.
+                Real-time on-chain analytics for Ink — track Tydro lending, Nado
+                perpetuals, and ecosystem liquidity flows.
               </p>
             </section>
 

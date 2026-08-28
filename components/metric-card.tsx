@@ -69,7 +69,7 @@ export function MetricCard({ metric, index }: { metric: Metric; index: number })
 
 export function MetricGrid({ metrics }: { metrics: Metric[] }) {
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
       {metrics.map((metric, i) => (
         <MetricCard key={metric.label} metric={metric} index={i} />
       ))}

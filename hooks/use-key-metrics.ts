@@ -14,7 +14,6 @@ const POLL_MS = 60_000;
  *   (lib/tydro.ts → fetchTydroOverview).
  * - 24h Volume: sum of every product's 24h quote volume from the Nado
  *   indexer tickers endpoint.
- * - Active Wallets: no on-chain source exists yet → null ("N/A").
  */
 export function useKeyMetrics(): { metrics: Metric[] } {
   const tydro = useTydroOverview(POLL_MS);
@@ -65,12 +64,6 @@ export function useKeyMetrics(): { metrics: Metric[] } {
         value: nadoVolumeUsd,
         pending: volumeLoading,
         source: 'Nado · indexer',
-      },
-      {
-        label: 'Active Wallets',
-        value: null,
-        pending: false,
-        source: 'Not available yet',
       },
       {
         label: 'Total Borrows',
