@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { Header } from '@/components/site-header';
 import { EcosystemPanel } from '@/components/ecosystem-panel';
 import { SiteFooter } from '@/components/site-footer';
@@ -8,13 +7,11 @@ import { useWallet } from '@/hooks/use-wallet';
 
 /**
  * Standalone /ecosystem route — the same live EcosystemPanel (protocol list,
- * TVL, 24h volume) presented as a full page instead of a nav-scrolled section.
- * View buttons (InkBoard / My Dashboard) route back to the home page, where
- * those views live.
+ * TVL, 24h volume) presented as a full page. Nav items are real links with
+ * pathname-based active highlighting (see site-header.tsx).
  */
 export function EcosystemPage() {
   const { address, connected, connect, disconnect } = useWallet();
-  const router = useRouter();
 
   return (
     <div className="grain-bg min-h-screen bg-background">
@@ -23,8 +20,6 @@ export function EcosystemPage() {
         address={address}
         onConnect={connect}
         onDisconnect={disconnect}
-        view="dashboard"
-        onViewChange={() => router.push('/')}
       />
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-8 2xl:px-12">

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { Menu, X, Wallet, LogOut, BarChart3, ExternalLink, LayoutDashboard, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,18 +16,15 @@ import {
 import { InkLogo } from '@/components/ink-logo';
 import { cn } from '@/lib/utils';
 
-export type View = 'dashboard' | 'my-dashboard';
-
 type NavLink = {
   label: string;
-  view?: View;
-  href?: string;
+  href: string;
   icon: React.ReactNode;
 };
 
 const navLinks: NavLink[] = [
-  { label: 'InkBoard', view: 'dashboard', icon: <BarChart3 className="h-4 w-4" /> },
-  { label: 'My Dashboard', view: 'my-dashboard', icon: <LayoutDashboard className="h-4 w-4" /> },
+  { label: 'InkBoard', href: '/', icon: <BarChart3 className="h-4 w-4" /> },
+  { label: 'My Dashboard', href: '/my-dashboard', icon: <LayoutDashboard className="h-4 w-4" /> },
   { label: 'Ecosystem', href: '/ecosystem', icon: <Globe className="h-4 w-4" /> },
   { label: 'Builders', href: '/builders', icon: <ExternalLink className="h-4 w-4" /> },
 ];
@@ -36,16 +34,17 @@ type HeaderProps = {
   address: string | null;
   onConnect: () => void;
   onDisconnect: () => void;
-  view: View;
-  onViewChange: (v: View) => void;
 };
 
-export function Header({ connected, address, onConnect, onDisconnect, view, onViewChange }: HeaderProps) {
+export function Header({ connected, address, onConnect, onDisconnect }: HeaderProps) {
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleNavClick = (link: NavLink) => {
-    if (link.view) onViewChange(link.view);
-    setMobileOpen(false);
+  const isActive = (href: string) => {
+    if (href === '/') return pathname === '/';
+    if (href === '/ecosystem') return pathname.startsWith('/ecosystem');
+    if (href === '/builders') return pathname.startsWith('/builders');
+    return pathname === href;
   };
 
   return (
@@ -67,33 +66,22 @@ export function Header({ connected, address, onConnect, onDisconnect, view, onVi
                   <span className="font-display text-lg font-bold tracking-tight">Ink</span>
                 </div>
                 <nav className="flex flex-1 flex-col gap-1 p-4">
-                  {navLinks.map((link) =>
-                    link.view ? (
-                      <button
-                        key={link.label}
-                        onClick={() => handleNavClick(link)}
-                        className={cn(
-                          'flex items-center gap-3 rounded-lg px-4 py-3 text-left text-sm font-medium transition-colors',
-                          view === link.view
-                            ? 'bg-[#8B5CF6]/15 text-[#C8B5FF]'
-                            : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                        )}
-                      >
-                        {link.icon}
-                        {link.label}
-                      </button>
-                    ) : (
-                      <Link
-                        key={link.label}
-                        href={link.href!}
-                        onClick={() => setMobileOpen(false)}
-                        className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                      >
-                        {link.icon}
-                        {link.label}
-                      </Link>
-                    )
-                  )}
+                  {navLinks.map((link) => (
+                    <Link
+                      key={link.label}
+                      href={link.href}
+                      onClick={() => setMobileOpen(false)}
+                      className={cn(
+                        'flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-colors',
+                        isActive(link.href)
+                          ? 'bg-[#8B5CF6]/15 text-[#C8B5FF]'
+                          : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                      )}
+                    >
+                      {link.icon}
+                      {link.label}
+                    </Link>
+                  ))}
                 </nav>
                 {connected && (
                   <div className="border-t border-border/60 p-4">
@@ -123,40 +111,29 @@ export function Header({ connected, address, onConnect, onDisconnect, view, onVi
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-1 md:flex">
-          {navLinks.map((link) =>
-            link.view ? (
-              <button
-                key={link.label}
-                onClick={() => onViewChange(link.view as View)}
-                className={cn(
-                  'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors',
-                  view === link.view
-                    ? 'bg-[#8B5CF6]/15 text-[#C8B5FF]'
-                    : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-                )}
-              >
-                {link.icon}
-                {link.label}
-              </button>
-            ) : (
-              <Link
-                key={link.label}
-                href={link.href!}
-                className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-              >
-                {link.icon}
-                {link.label}
-              </Link>
-            )
-          )}
+          {navLinks.map((link) => (
+            <Link
+              key={link.label}
+              href={link.href}
+              className={cn(
+                'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors',
+                isActive(link.href)
+                  ? 'bg-[#8B5CF6]/15 text-[#C8B5FF]'
+                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+              )}
+            >
+              {link.icon}
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
         {/* Right: Connect / Avatar */}
         <div className="flex flex-1 items-center justify-end gap-3">
           {connected && address ? (
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => onViewChange('my-dashboard')}
+              <Link
+                href="/my-dashboard"
                 className="flex items-center gap-2.5 rounded-full py-1 pl-1 pr-2.5 transition-colors hover:bg-secondary"
                 title="View My Dashboard"
               >
@@ -168,7 +145,7 @@ export function Header({ connected, address, onConnect, onDisconnect, view, onVi
                 <span className="hidden font-display text-sm font-medium sm:inline">
                   {address.slice(0, 6)}…{address.slice(-4)}
                 </span>
-              </button>
+              </Link>
               <Button
                 variant="ghost"
                 size="icon"
