@@ -16,18 +16,31 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: 'InkBoard — Ink Ecosystem Dashboard',
+  metadataBase: new URL('https://inkscope-one.vercel.app/'),
+  title: 'InkScope — The Ink Ecosystem Dashboard',
   description:
-    'On-chain analytics for the Ink blockchain. Track Tydro & Nado protocols — TVL, volume, positions, and the builders shipping on top.',
+    'Real-time on-chain analytics for Ink — track Tydro lending, Nado perpetuals, and ecosystem liquidity flows.',
   openGraph: {
-    title: 'InkBoard — Ink Ecosystem Dashboard',
+    type: 'website',
+    url: 'https://inkscope-one.vercel.app/',
+    siteName: 'InkScope',
+    title: 'InkScope — The Ink Ecosystem Dashboard',
     description:
-      'On-chain analytics for the Ink blockchain. Track Tydro & Nado protocols.',
-    images: [{ url: 'https://bolt.new/static/og_default.png' }],
+      'Real-time on-chain analytics for Ink — track Tydro lending, Nado perpetuals, and ecosystem liquidity flows.',
+    images: [
+      {
+        url: '/og.png',
+        width: 1200,
+        height: 630,
+        alt: 'InkScope — The Ink Ecosystem Dashboard',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
-    images: [{ url: 'https://bolt.new/static/og_default.png' }],
+    title: 'InkScope — The Ink Ecosystem Dashboard',
+    description: 'Real-time on-chain analytics for Ink.',
+    images: ['/og.png'],
   },
 };
 
