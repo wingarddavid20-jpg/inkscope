@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { Menu, X, Wallet, LogOut, BarChart3, ExternalLink, LayoutDashboard, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,8 +27,8 @@ type NavLink = {
 const navLinks: NavLink[] = [
   { label: 'InkBoard', view: 'dashboard', icon: <BarChart3 className="h-4 w-4" /> },
   { label: 'My Dashboard', view: 'my-dashboard', icon: <LayoutDashboard className="h-4 w-4" /> },
-  { label: 'Ecosystem', href: '#ecosystem', icon: <Globe className="h-4 w-4" /> },
-  { label: 'Builders', href: '#builders', icon: <ExternalLink className="h-4 w-4" /> },
+  { label: 'Ecosystem', href: '/ecosystem', icon: <Globe className="h-4 w-4" /> },
+  { label: 'Builders', href: '/builders', icon: <ExternalLink className="h-4 w-4" /> },
 ];
 
 type HeaderProps = {
@@ -82,15 +83,15 @@ export function Header({ connected, address, onConnect, onDisconnect, view, onVi
                         {link.label}
                       </button>
                     ) : (
-                      <a
+                      <Link
                         key={link.label}
-                        href={link.href}
+                        href={link.href!}
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                       >
                         {link.icon}
                         {link.label}
-                      </a>
+                      </Link>
                     )
                   )}
                 </nav>
@@ -138,14 +139,14 @@ export function Header({ connected, address, onConnect, onDisconnect, view, onVi
                 {link.label}
               </button>
             ) : (
-              <a
+              <Link
                 key={link.label}
-                href={link.href}
+                href={link.href!}
                 className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
               >
                 {link.icon}
                 {link.label}
-              </a>
+              </Link>
             )
           )}
         </nav>
