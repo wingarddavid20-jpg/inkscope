@@ -15,6 +15,7 @@ type NftItem = {
   id: string;
   name: string;
   logo: string | null;
+  banner: string | null;
   floorPrice: number | null;
   volume24h: number | null;
   totalSupply: number | null;
@@ -26,6 +27,7 @@ type OpenseaCollection = {
   collection?: string;
   name?: string;
   image_url?: string | null;
+  banner_image_url?: string | null;
   floor_price?: number | null;
   one_day_volume?: number | null;
   total_supply?: number | null;
@@ -47,6 +49,7 @@ function mapOpenseaItem(raw: OpenseaCollection): NftItem {
     id: slug ?? name,
     name,
     logo: raw.image_url ?? null,
+    banner: raw.banner_image_url ?? null,
     floorPrice: finiteNumber(raw.floor_price),
     // The v2 list endpoint does not include per-day volume for every collection;
     // render "—" (never fabricate) when the field is absent.
@@ -183,41 +186,68 @@ function NftCard({
 }) {
   return (
     <Card
-      className="glass flex flex-col border-border/60 p-4 animate-fade-in-up transition-transform duration-300 hover:-translate-y-0.5"
+      className="glass flex flex-col overflow-hidden border-border/60 animate-fade-in-up transition-transform duration-300 hover:-translate-y-0.5"
       style={{ animationDelay: `${delay}ms` }}
     >
-      <div className="flex items-center gap-2.5">
-        <NftLogo nft={nft} />
-        <div className="min-w-0">
-          <p className="truncate font-display text-sm font-bold">{nft.name}</p>
-          <p className="font-body text-[10px] uppercase tracking-wider text-muted-foreground">
-            {source === 'opensea' ? 'OpenSea · live' : 'Fallback data'}
-          </p>
+      <NftBanner nft={nft} />
+
+      <div className="flex flex-1 flex-col p-4">
+        <div className="flex items-center gap-2.5">
+          <NftLogo nft={nft} />
+          <div className="min-w-0">
+            <p className="truncate font-display text-sm font-bold">{nft.name}</p>
+            <p className="font-body text-[10px] uppercase tracking-wider text-muted-foreground">
+              {source === 'opensea' ? 'OpenSea · live' : 'Fallback data'}
+            </p>
+          </div>
         </div>
-      </div>
 
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        <NftStat label="Floor" value={formatEth(nft.floorPrice)} />
-        <NftStat label="24h Vol" value={formatEth(nft.volume24h)} />
-        <NftStat
-          label="Supply"
-          value={nft.totalSupply != null ? formatNumber(nft.totalSupply) : 'N/A'}
-        />
-      </div>
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <NftStat label="Floor" value={formatEth(nft.floorPrice)} />
+          <NftStat label="24h Vol" value={formatEth(nft.volume24h)} />
+          <NftStat
+            label="Supply"
+            value={nft.totalSupply != null ? formatNumber(nft.totalSupply) : 'N/A'}
+          />
+        </div>
 
-      {nft.url ? (
-        <a
-          href={nft.url}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-3 flex items-center justify-center gap-1.5 rounded-lg border border-border/60 py-2 font-display text-xs font-semibold text-[#C8B5FF] transition-colors hover:border-accent/50 hover:text-[#D8C7FF]"
-        >
-          View on OpenSea
-          <ExternalLink className="h-3 w-3" />
-        </a>
-      ) : null}
+        {nft.url ? (
+          <a
+            href={nft.url}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 flex items-center justify-center gap-1.5 rounded-lg border border-border/60 py-2 font-display text-xs font-semibold text-[#C8B5FF] transition-colors hover:border-accent/50 hover:text-[#D8C7FF]"
+          >
+            View on OpenSea
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        ) : null}
+      </div>
     </Card>
   );
+}
+
+/** Collection banner across the top of the card; falls back to the logo. */
+function NftBanner({ nft }: { nft: NftItem }) {
+  const [failed, setFailed] = useState(false);
+  const src = nft.banner ?? nft.logo;
+
+  if (src && !failed) {
+    return (
+      <div className="relative h-28 w-full shrink-0 overflow-hidden bg-secondary">
+        <Image
+          src={src}
+          alt={`${nft.name} banner`}
+          fill
+          loading="lazy"
+          onError={() => setFailed(true)}
+          className="object-cover"
+        />
+      </div>
+    );
+  }
+
+  return <div className="h-28 w-full shrink-0 bg-gradient-to-br from-[#8B5CF6]/25 to-[#6D28D9]/10" />;
 }
 
 function NftStat({ label, value }: { label: string; value: string }) {
